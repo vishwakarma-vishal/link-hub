@@ -1,6 +1,15 @@
 import { Response, Request } from "express"
 import User from "../models/User";
+import jwt from "jsonwebtoken";
+import { Types } from "mongoose";
 
+type userType = { 
+    name: String,
+    email: String,
+    password: String,
+    createdAt : Date,
+    _id: Types.ObjectId
+}
 
 const signupHandler = async (req: Request, res: Response) => {
     const { name, email, password } = req.body;
@@ -72,6 +81,14 @@ const signinHandler = async (req: Request, res: Response) => {
             });
             return;
         }
+
+        const secret = process.env.SECRET;
+        
+        if(!secret) {
+            throw new Error("Jwt secret is not define in env file.");
+        }
+
+        const token = jwt.sign({email}, secret)
 
         res.status(200).json({
             success: true,
