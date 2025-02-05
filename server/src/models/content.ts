@@ -1,21 +1,33 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { Types, Document, Schema } from "mongoose";
 
-const contentSchema = new mongoose.Schema({
+interface IContent extends Document {
+    title: string;
+    link: string;
+    category: "youtube" | "twitter";
+    tags: Types.ObjectId[];
+    userId: Types.ObjectId;
+}
+
+const contentSchema = new Schema<IContent>({
     title: {
         type: String,
         required: true
     },
     link: {
         type: String,
+        required: true
+    },
+    category: {
+        type: String,
         enum: ["youtube", "twitter"],
         required: true
     },
-    tags: [{
-        type: Types.ObjectId,
+    tags: {
+        type: [Schema.Types.ObjectId],
         ref: 'Tag'
-    }],
+    },
     userId: {
-        type: Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: 'User',
         required: true
     }
