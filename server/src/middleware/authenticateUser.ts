@@ -1,7 +1,11 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-const authenticateUser = (req: Request, res: Response, next: NextFunction): void => {
+interface AuthenticatedRequest extends Request {
+    token?: JwtPayload
+}
+
+const authenticateUser = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     try {
         const token = req.headers.authorization?.split(" ")[1];
 
@@ -13,15 +17,15 @@ const authenticateUser = (req: Request, res: Response, next: NextFunction): void
             return;
         }
 
-        const secret = process.env.SECRET;
+        const secret = process.env.SECRET as string;
 
         if (!secret) {
-            throw new Error ("Jwt is not define in enviornment variable");
+            throw new Error("Jwt is not define in enviornment variable");
         }
 
         const decodedToken = jwt.verify(token, secret) as JwtPayload;
 
-        req.body.token = decodedToken;
+        req.token = decodedToken;
         next();
     } catch (error) {
         res.status(500).json({
