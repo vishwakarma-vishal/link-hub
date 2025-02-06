@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
     token?: JwtPayload
 }
 

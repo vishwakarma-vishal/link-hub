@@ -1,21 +1,38 @@
 import { Response, Request } from "express"
-import User from "../models/User";
+import User, { IUser } from "../models/User";
 import jwt from "jsonwebtoken";
-import { Types } from "mongoose";
+import bcrypt from "bcrypt";
 
-type userType = { 
-    name: String,
-    email: String,
-    password: String,
-    createdAt : Date,
-    _id: Types.ObjectId
+enum StatusCode {
+    Success = 200,
+    Created = 201,
+    Error = 500,
+    NotFound = 404,
+    BadRequest = 400,
+    Unauthorized = 401
 }
 
-const signupHandler = async (req: Request, res: Response) => {
+const SECRET = process.env.SECRET as string;
+if (!SECRET) {
+    throw new Error("JWT secret is not defined in the .env file.");
+}
+
+type SignupRequestBody = {
+    name: string,
+    email: string,
+    password: string
+}
+
+type SigninRequestBody = {
+    email: string,
+    password: string
+}
+
+const signupHandler = async (req: Request<{}, {}, SignupRequestBody>, res: Response): Promise<void> => {
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-        res.status(400).json({
+        res.status(StatusCode.BadRequest).json({
             success: false,
             message: "Please provide all the required information."
         });
@@ -23,40 +40,53 @@ const signupHandler = async (req: Request, res: Response) => {
     }
 
     try {
-        const userInDb = await User.findOne({ email });
+        const userInDb: IUser | null = await User.findOne({ email });
 
         if (userInDb) {
-            res.status(400).json({
+            res.status(StatusCode.BadRequest).json({
                 success: false,
                 message: "Email already exist, log in"
             });
             return;
         }
 
-        const newUser = await User.create({
+        const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS || "10", 10);
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        const newUser: IUser = await User.create({
             name: name,
             email: email,
-            password: password
+            password: hashedPassword
         });
 
-        res.status(200).json({
+        res.status(StatusCode.Created).json({
             success: true,
             message: "User registered successfully",
             user: newUser
         });
-    } catch (error) {
-        res.status(500).json({
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.log(error.message);
+        } else {
+            console.log("Unknown error:", error);
+        }
+
+        res.status(StatusCode.Error).json({
             success: false,
-            message: "Something went wrong"
+            message: process.env.NODE_ENV === "development"
+                ? error instanceof Error
+                    ? error.message
+                    : "Unknown error occured"
+                : "Something went wrong"
         });
     }
 }
 
-const signinHandler = async (req: Request, res: Response) => {
+const signinHandler = async (req: Request<{}, {}, SigninRequestBody>, res: Response): Promise<void> => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        res.status(400).json({
+        res.status(StatusCode.BadRequest).json({
             success: false,
             message: "Please provide all the required info"
         });
@@ -64,40 +94,47 @@ const signinHandler = async (req: Request, res: Response) => {
     }
 
     try {
-        const userInDb = await User.findOne({ email });
+        const userInDb: IUser | null = await User.findOne({ email });
 
         if (!userInDb) {
-            res.status(404).json({
+            res.status(StatusCode.NotFound).json({
                 success: false,
                 message: "User not found"
             });
             return;
         }
 
-        if (userInDb?.password !== password) {
-            res.status(401).json({
+        const isPasswordValid = await bcrypt.compare(password, userInDb.password);
+
+        if (!isPasswordValid) {
+            res.status(StatusCode.Unauthorized).json({
                 success: false,
                 message: "Invalid credentials"
             });
             return;
         }
 
-        const secret = process.env.SECRET;
-        
-        if(!secret) {
-            throw new Error("Jwt secret is not define in env file.");
+        const token = jwt.sign({ email }, SECRET, { expiresIn: "1h" });
+
+        res.status(StatusCode.Success).json({
+            success: true,
+            message: "Login successfully",
+            token
+        });
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.log(error.message);
+        } else {
+            console.log("Unknown error:", error);
         }
 
-        const token = jwt.sign({email}, secret)
-
-        res.status(200).json({
-            success: true,
-            message: "Login successfully"
-        });
-    } catch (error) {
-        res.status(500).json({
+        res.status(StatusCode.Error).json({
             success: false,
-            message: "Something went wrong"
+            message: process.env.NODE_ENV === "development"
+                ? error instanceof Error
+                    ? error.message
+                    : "Unknown error occured"
+                : "Something went wrong"
         });
     }
 }
