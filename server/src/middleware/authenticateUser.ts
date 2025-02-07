@@ -1,5 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
+import { StatusCode } from "../constants/statusCodes";
+import SECRET from "..";
+
 
 export interface AuthenticatedRequest extends Request {
     token?: JwtPayload
@@ -10,28 +13,29 @@ const authenticateUser = (req: AuthenticatedRequest, res: Response, next: NextFu
         const token = req.headers.authorization?.split(" ")[1];
 
         if (!token) {
-            res.status(400).json({
+            res.status(StatusCode.BadRequest).json({
                 success: false,
                 message: "Token is required"
             });
             return;
         }
 
-        const secret = process.env.SECRET as string;
-
-        if (!secret) {
-            throw new Error("Jwt is not define in enviornment variable");
-        }
-
-        const decodedToken = jwt.verify(token, secret) as JwtPayload;
+        const decodedToken = jwt.verify(token, SECRET) as JwtPayload;
 
         req.token = decodedToken;
         next();
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Something went wrong"
-        });
+        if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {
+            res.status(StatusCode.Unauthorized).json({
+                success: false,
+                message: "Invalid or expired token."
+            });
+        } else {
+            res.status(StatusCode.Error).json({
+                success: false,
+                message: "Something went wrong."
+            });
+        }
     }
 }
 

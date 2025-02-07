@@ -1,6 +1,6 @@
 import mongoose, { Types, Document, Schema } from "mongoose";
 
-interface IContent extends Document {
+export interface IContent extends Document {
     title: string;
     link: string;
     category: "youtube" | "twitter";
@@ -11,7 +11,8 @@ interface IContent extends Document {
 const contentSchema = new Schema<IContent>({
     title: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     link: {
         type: String,

@@ -2,20 +2,8 @@ import { Response, Request } from "express"
 import User, { IUser } from "../models/User";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-
-enum StatusCode {
-    Success = 200,
-    Created = 201,
-    Error = 500,
-    NotFound = 404,
-    BadRequest = 400,
-    Unauthorized = 401
-}
-
-const SECRET = process.env.SECRET as string;
-if (!SECRET) {
-    throw new Error("JWT secret is not defined in the .env file.");
-}
+import { StatusCode } from "../constants/statusCodes";
+import SECRET from "..";
 
 type SignupRequestBody = {
     name: string,
@@ -114,7 +102,7 @@ const signinHandler = async (req: Request<{}, {}, SigninRequestBody>, res: Respo
             return;
         }
 
-        const token = jwt.sign({ email }, SECRET, { expiresIn: "1h" });
+        const token = jwt.sign({ email: userInDb.email, id:userInDb._id }, SECRET, { expiresIn: "1h" });
 
         res.status(StatusCode.Success).json({
             success: true,
