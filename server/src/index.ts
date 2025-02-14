@@ -4,6 +4,7 @@ import express, { Application } from "express";
 import authRoutes from "./routes/authRoutes";
 import contentRoutes from "./routes/contentRoutes";
 import dbConnect from "./config/database";
+import cors from "cors"
 
 const SECRET = process.env.SECRET as string;
 if (!SECRET) {
@@ -15,6 +16,7 @@ export default SECRET;
 const app: Application = express();
 
 // middlewares
+app.use(cors());
 app.use(express.json());
 
 // routes

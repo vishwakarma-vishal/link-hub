@@ -7,10 +7,10 @@ import mongoose from "mongoose";
 interface UpdateContentRequest extends Partial<IContent> { }
 
 const createContent = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    const { title, link, category } = req.body;
+    const { title, link } = req.body;
     const userId = req.token?.id;
 
-    if (!title || !link || !category) {
+    if (!title || !link ) {
         res.status(StatusCode.BadRequest).json({
             success: false,
             message: "Please provide all the required information"
@@ -22,7 +22,6 @@ const createContent = async (req: AuthenticatedRequest, res: Response): Promise<
         await Content.create({
             title,
             link,
-            category,
             userId
         });
 

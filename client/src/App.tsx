@@ -1,8 +1,17 @@
+import React from "react"
+import { Routes, Route } from "react-router-dom"
+import Dashboard from "./pages/Dashboard"
+import Signup from "./pages/Signup"
+import Login from "./pages/Login"
 
-function App() {
-
+const App: React.FC = function () {
   return (
-      <div className="text-3xl bg-green-500">hello</div>
+    <Routes>
+      <Route path="/" element={<Dashboard />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/login" element={<Login />
+      } />
+    </Routes>
   )
 }
 
