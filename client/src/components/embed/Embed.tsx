@@ -2,74 +2,62 @@ import React, { useEffect, useState } from "react";
 
 type EmbedProps = {
     url: string;
-    setLinkType: Function
+    category: string;
 };
 
-const Embed: React.FC<EmbedProps> = ({ url, setLinkType }) => {
-    const [embedUrl, setEmbedUrl] = useState("");
-    const [embedType, setEmbedType] = useState("");
+const Embed: React.FC<EmbedProps> = ({ url, category }) => {
+    const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+    const [iframeError, setIframeError] = useState(false);
 
     useEffect(() => {
-        let embedUrl = "";
-        let embedType = "";
+        let embedUrl: string | null = null;
 
-        if (url.includes("youtube.com") || url.includes("youtu.be")) {
+        if (category === "youtube") {
             const videoId = new URL(url).searchParams.get("v") || url.split("/").pop();
             embedUrl = `https://www.youtube.com/embed/${videoId}`;
-            embedType = "youtube";
-        }
-        else if (url.includes("x.com")) {
-            embedType = "twitter";
-        }
-        else if (url.includes("linkedin.com")) {
-            embedType = "linkedin";
-            console.log(url);
-
-            // Extract LinkedIn Post ID Correctly
+        } else if (category === "twitter") {
+            embedUrl = url.replace("x.com", "twitter.com");
+        } else if (category === "linkedin") {
             const match = url.match(/activity-(\d+)/);
-
             if (match) {
                 const postId = match[1];
-                console.log(postId);
                 embedUrl = `https://www.linkedin.com/embed/feed/update/urn:li:activity:${postId}`;
-                console.log(embedUrl);
             } else {
                 console.error("Invalid LinkedIn URL format.");
             }
-        }
-        else if (url.includes("instagram.com")) {
-            embedType = "instagram";
-        } else {
-            embedType = "link";
+        } else if (category === "instagram") {
             embedUrl = url;
+        } else {
+            embedUrl = url.startsWith("http://") || url.startsWith("https://") ? url : `http://${url}`;
         }
 
+        console.log(`Determined embed URL for category ${category}: ${embedUrl}`);
         setEmbedUrl(embedUrl);
-        setEmbedType(embedType);
-        setLinkType(embedType);
-    }, [url]);
+    }, [url, category]);
 
     useEffect(() => {
-        if (embedType === "twitter") {
-            // ...existing code...
+        if (category === "twitter") {
+            const script = document.createElement("script");
+            script.src = "https://platform.twitter.com/widgets.js";
+            script.async = true;
+            document.body.appendChild(script);
         }
 
-        if (embedType === "instagram") {
+        if (category === "instagram") {
             const script = document.createElement("script");
             script.src = "https://www.instagram.com/embed.js";
             script.async = true;
             script.onload = () => {
-                console.log("Instagram script loaded");
                 (window as any).instgrm?.Embeds.process();
             };
             document.body.appendChild(script);
         }
-    }, [embedType]);
+    }, [category]);
 
     return (
         <div className="w-full rounded-lg overflow-hidden">
             {/* YouTube Embed */}
-            {embedType === "youtube" && (
+            {category === "youtube" && embedUrl && (
                 <iframe
                     className="w-full rounded-lg"
                     src={embedUrl}
@@ -81,16 +69,16 @@ const Embed: React.FC<EmbedProps> = ({ url, setLinkType }) => {
             )}
 
             {/* Twitter Embed */}
-            {embedType === "twitter" && (
+            {category === "twitter" && embedUrl && (
                 <div className="overflow-scroll">
                     <blockquote className="twitter-tweet" data-dnt="true">
-                        <a href={url.replace("x.com", "twitter.com")}></a>
+                        <a href={embedUrl}></a>
                     </blockquote>
                 </div>
             )}
 
             {/* LinkedIn Embed */}
-            {embedType === "linkedin" && embedUrl ? (
+            {category === "linkedin" && embedUrl ? (
                 <div className="h-full overflow-scroll">
                     <iframe
                         src={embedUrl}
@@ -101,11 +89,11 @@ const Embed: React.FC<EmbedProps> = ({ url, setLinkType }) => {
                     ></iframe>
                 </div>
             ) : (
-                embedType === "linkedin" && <p className="text-red-500">Invalid LinkedIn Post URL</p>
+                category === "linkedin" && <p className="text-red-500">Invalid LinkedIn Post URL</p>
             )}
 
             {/* Instagram Embed */}
-            {embedType === "instagram" && (
+            {category === "instagram" && embedUrl && (
                 <div className="h-full overflow-scroll" >
                     <blockquote
                         className="instagram-media"
@@ -116,32 +104,39 @@ const Embed: React.FC<EmbedProps> = ({ url, setLinkType }) => {
             )}
 
             {/* Unrecognized Embed */}
-            {embedType === "link" && (
+            {category === "link" && embedUrl && !iframeError && (
                 <div>
-                    <iframe
-                        className="w-full h-64 rounded-lg"
-                        src={embedUrl}
-                        title="Unrecognized website"
-                        frameBorder="0"
-                        onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling.style.display = 'block';
-                        }}
-                    ></iframe>
-                    <a href={embedUrl} className="text-blue-500 underline">Visit link</a>
-                </div >
+                    {embedUrl.includes("google.com") ? (
+                        <p className="text-red-400 text-sm">Google cannot be embedded. Please visit the link below:</p>
+                    ) : (
+                        <iframe
+                            className="w-full h-64 rounded-lg"
+                            src={embedUrl}
+                            title="Unrecognized website"
+                            frameBorder="0"
+                            onError={() => setIframeError(true)}
+                        ></iframe>
+                    )}
+                    <a href={embedUrl} className="text-blue-500 underline" target="_blank" rel="noopener noreferrer">
+                        Visit link
+                    </a>
+                </div>
+            )}
+
+
+            {/* Fallback for Unrecognized Embed */}
+            {iframeError && (
+                <div>
+                    <p className="text-red-500">This content cannot be embedded. Please visit the link below:</p>
+                    <a href={url} className="text-blue-500 underline" target="_blank" rel="noopener noreferrer">
+                        {url}
+                    </a>
+                </div>
             )}
 
             {/* Default: If no embed type is found, show the raw link */}
-            {!embedType && (
+            {!category && (
                 <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-                    {url}
-                </a>
-            )}
-
-            {/* Fallback link for unrecognized embed */}
-            {embedType === "link" && (
-                <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline" style={{ display: 'none' }}>
                     {url}
                 </a>
             )}

@@ -18,11 +18,11 @@ const contentSchema = new Schema<IContent>({
         type: String,
         required: true
     },
-    // category: {
-    //     type: String,
-    //     enum: ["youtube", "twitter"],
-    //     required: true
-    // },
+    category: {
+        type: String,
+        enum: ["youtube", "twitter", "linkedin", "instagram", "link"],
+        required: true
+    },
     tags: {
         type: [Schema.Types.ObjectId],
         ref: 'Tag'

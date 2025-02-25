@@ -1,27 +1,38 @@
+import React, { useState } from "react";
 import Button from "../common/Button";
-import PlusIcon from "../../../public/AddIcon"
-import ShareIcon from "../../../public/ShareIcon"
+import PlusIcon from "../Icons/AddIcon";
+import ShareIcon from "../Icons/ShareIcon";
 import Card from "./Card";
-import { useEffect, useState } from "react";
 import axios from "axios";
 import { RxCrossCircled } from "react-icons/rx";
 
-const Content: React.FC = () => {
-    // add content
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    console.log(isModalOpen);
+interface Link {
+    id: string;
+    title: string;
+    link: string;
+    category: string;
+}
 
+interface ContentProps {
+    links: Link[];
+    isModalOpen: boolean;
+    setIsModalOpen: Function;
+    selectedLinkType: string;
+}
+
+const Content: React.FC<ContentProps> = ({ links, isModalOpen, setIsModalOpen, selectedLinkType }) => {
     const [formdata, setFormdata] = useState({
         title: "",
-        link: ""
+        link: "",
+        category: "link" // default type
     });
 
-    const changeHandler = (e) => {
+    const changeHandler = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormdata({ ...formdata, [e.target.name]: e.target.value });
     }
 
-    // add content
-    const submitHandler = async (e) => {
+    // add content(link)
+    const submitHandler = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         try {
@@ -33,56 +44,43 @@ const Content: React.FC = () => {
                     Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
             });
+            if (response.data.success) {
+                setIsModalOpen(false);
+            }
             console.log(response);
         } catch (error) {
             console.error(error);
         }
     }
 
-    // get all content
-    const getAllContent = async () => {
-        try {
-            const response = await axios({
-                method: "get",
-                url: "http://localhost:3001/content/get",
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("token")}`
-                }
-            });
-            console.log(response);
-        } catch (error) {
-            console.error(error);
-        }
-    }
-
-    useEffect(getAllContent, []);
-
+    // first letter capital for category name
+    const capitalizeFirstLetter = (str: string) => {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    };
+    
     return (
-        <main className="relative p-8 w-full">
+        <main className="relative p-8 w-full h-screen">
             <div className="flex justify-between">
-                <h2 className="text-2xl font-semibold">All Notes</h2>
+                <h2 className="text-2xl font-semibold">{capitalizeFirstLetter(selectedLinkType)}</h2>
                 <div className="flex gap-4">
                     <Button type="secondary" icon={<ShareIcon color="text-black" />} text="Share Brain" />
                     <Button handler={() => setIsModalOpen(true)} type="primary" icon={<PlusIcon color="text-white" />} text="Add Content" />
                 </div>
             </div>
 
-            <div className="columns-1 lg:columns-2 xl:columns-3 gap-4 my-6">
-                {[
-                    { title: "My best YouTube video", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-                    { title: "Twitter post of my DSA journey", url: "https://x.com/vishaldev29/status/1882011601429233893" },
-                    { title: "This is the Insta post", url: "https://www.instagram.com/p/DGAYZlOtgWt/?utm_source=ig_web_copy_link" },
-                    { title: "Basic LinkedIn post", url: "https://www.linkedin.com/posts/edelweiss-amc_2-days-to-go-dont-miss-out-on-the-opportunity-activity-7295665355354427392-BJY0?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAAEG-P6MBXoVNF7nsv7l8Ka-m7fTRHasfvJ0" },
-                    { title: "New link", url: "https://github.com/vishwakarma-vishal?tab=stars" },
-                    { title: "Tailwind Docs", url: "https://tailwindcss.com/docs/overflow" },
-                ].map((item, index) => (
-                    <div key={index} className="break-inside-avoid mb-4">
-                        <Card title={item.title} url={item.url} />
-                    </div>
-                ))}
-            </div>
+            {links.length === 0 ?
+                <div className="flex justify-center items-center h-[90%] text-gray-400">
+                    No links available for the selected category, select different category or add some links.
+                </div> :
+                <div className="columns-1 lg:columns-2 xl:columns-3 gap-4 my-6">
+                    {links.map((link) => (
+                        <div key={link.id} className="break-inside-avoid mb-4">
+                            <Card title={link.title} url={link.link} category={link.category} />
+                        </div>
+                    ))}
+                </div>
+            }
 
-            // add content
             {
                 isModalOpen &&
                 <div className="absolute flex justify-center items-center top-0 left-0 h-screen w-full bg-[rgba(0,0,0,0.5)]">
@@ -116,9 +114,25 @@ const Content: React.FC = () => {
                                     placeholder="link goes here..."
                                     className="inline-block mt-1 border border-gray-400 outline-none py-1 px-4 rounded-full w-full" />
                             </div>
+                            <div>
+                                <label htmlFor="category">Category</label><br />
+                                <select
+                                    id="category"
+                                    name="category"
+                                    onChange={changeHandler}
+                                    value={formdata.category}
+                                    className="inline-block mt-1 border border-gray-400 outline-none py-1 px-4 rounded-full w-full"
+                                >
+                                    <option value="youtube">YouTube</option>
+                                    <option value="twitter">Twitter</option>
+                                    <option value="linkedin">LinkedIn</option>
+                                    <option value="instagram">Instagram</option>
+                                    <option value="link">Link</option>
+                                </select>
+                            </div>
                             <button
                                 type="submit"
-                                className="bg-blue-600 text-white  py-1 rounded-full mt-2 cursor-pointer">
+                                className="bg-blue-600 text-white py-1 rounded-full mt-2 cursor-pointer">
                                 Add Link
                             </button>
                         </form>

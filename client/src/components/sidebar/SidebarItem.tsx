@@ -1,27 +1,28 @@
 import React from "react";
-import YoutubeIcon from "../../../public/YoutubeIcon";
-import TwitterIcon from "../../../public/TwitterIcon";
-import LinkedinIcon from "../../../public/LinkedinIcon";
-import InstagramIcon from "../../../public/InstagramIcon";
-import LinkIcon from "../../../public/LinkIcon";
-
-type SidebarItemProps = {
-    icon: string;
-    text: string;
-}
+import YoutubeIcon from "../Icons/YoutubeIcon";
+import TwitterIcon from "../Icons/TwitterIcon";
+import LinkedinIcon from "../Icons/LinkedinIcon";
+import InstagramIcon from "../Icons/InstagramIcon";
+import LinkIcon from "../Icons/LinkIcon";
 
 const Icon = {
-    youtube: <YoutubeIcon color="text-gray-700"/>,
-    twitter: <TwitterIcon color="text-gray-700"/>,
-    linkedin: <LinkedinIcon color="text-gray-700"/>,
-    instagram: <InstagramIcon color="text-gray-700"/>,
-    link: <LinkIcon color="text-gray-700"/>,
+    youtube: <YoutubeIcon color="text-gray-700" />,
+    twitter: <TwitterIcon color="text-gray-700" />,
+    linkedin: <LinkedinIcon color="text-gray-700" />,
+    instagram: <InstagramIcon color="text-gray-700" />,
+    link: <LinkIcon color="text-gray-700" />,
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ icon, text }) => {
+type SidebarItemProps = {
+    icon: keyof typeof Icon;
+    text: string;
+    handler: () => void;
+}
+
+const SidebarItem: React.FC<SidebarItemProps> = ({ icon, text, handler }) => {
     return (
-        <div className="flex items-center gap-3">
-            {Icon[icon]}
+        <div onClick={handler} className="flex items-center gap-3">
+            {Icon[icon as keyof typeof Icon]}
             <p>{text}</p>
         </div>
     )
