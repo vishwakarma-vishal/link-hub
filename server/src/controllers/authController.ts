@@ -44,7 +44,9 @@ const signupHandler = async (req: Request<{}, {}, SignupRequestBody>, res: Respo
         const newUser: IUser = await User.create({
             name: name,
             email: email,
-            password: hashedPassword
+            password: hashedPassword,
+            sharing: false,
+            sharing_token: ""
         });
 
         res.status(StatusCode.Created).json({

@@ -3,6 +3,7 @@ dotenv.config();
 import express, { Application } from "express";
 import authRoutes from "./routes/authRoutes";
 import contentRoutes from "./routes/contentRoutes";
+import sharingRoutes from "./routes/sharingRoutes";
 import dbConnect from "./config/database";
 import cors from "cors"
 
@@ -20,6 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 // routes
+app.use("/sharing", sharingRoutes);
 app.use("/auth", authRoutes);
 app.use("/content", contentRoutes);
 

@@ -5,6 +5,8 @@ export interface IUser extends Document {
     email: string;
     password: string;
     createdAt: Date;
+    sharing: boolean;
+    sharing_token: string;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -21,6 +23,13 @@ const UserSchema = new Schema<IUser>({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    sharing: {
+        type: Boolean,
+        default: false
+    },
+    sharing_token: {
+        type: String
     }
 });
 
