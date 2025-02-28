@@ -1,20 +1,35 @@
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
 import User from "../models/User";
 import Content from "../models/Content";
+import { IUser } from "../models/User";
+import { AuthenticatedRequest } from "../middleware/authenticateUser";
+import { StatusCode } from "../constants/statusCodes";
+import crypto from "crypto";
 
-const generateHash = () => {
-    return Math.random().toString(36).substring(2, 15);
-}
+//generate unique hash for every user
+const generateUniqueHash = async (): Promise<string> => {
+    let newHash: string = "";
+    let isUnique = false;
 
-const toggleSharing = async (req: Request, res: Response): Promise<void> => {
-    const { userId } = req.body;
+    while (!isUnique) {
+        newHash = crypto.randomBytes(16).toString("hex"); 
+        const existingUser = await User.findOne({ sharing_token: newHash });
+        if (!existingUser) {
+            isUnique = true;
+        }
+    }
+
+    return newHash;
+};
+
+const toggleSharing = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    const userId = req.token?.id;
 
     try {
-        const userInDb = await User.findOne({ userId });
+        const userInDb = await User.findById(userId);
 
         if (!userInDb) {
-            res.status(404).json({
+            res.status(StatusCode.NotFound).json({
                 success: false,
                 message: "user not found"
             });
@@ -23,29 +38,36 @@ const toggleSharing = async (req: Request, res: Response): Promise<void> => {
 
         if (userInDb.sharing) {
             userInDb.sharing = false;
-            userInDb.sharing_token = "";
-            await userInDb.save();
-
-            res.status(200).json({
-                success: true,
-                message: "Turned off sharing successfully."
-            });
+            userInDb.sharing_token = null;
         } else {
-            const hash = generateHash();
             userInDb.sharing = true;
-            userInDb.sharing_token = hash;
-            await userInDb.save();
-
-            res.status(200).json({
-                success: true,
-                message: "Turned on sharing successfully.",
-                token: hash
-            });
+            userInDb.sharing_token = await generateUniqueHash();
         }
-    } catch (error) {
-        res.status(500).json({
+
+        await userInDb.save();
+
+        res.status(StatusCode.Success).json({
+            success: true,
+            message: userInDb.sharing
+                ? "Sharing enabled successfully."
+                : "Sharing disabled successfully.",
+            token: userInDb.sharing ? userInDb.sharing_token : undefined
+        });
+
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.log(error.message);
+        } else {
+            console.log("Unknown error: ", error);
+        }
+
+        res.status(StatusCode.Error).json({
             success: false,
-            message: "Internal Server Error"
+            message: process.env.NODE_ENV === "development" ?
+                error instanceof Error ?
+                    error.message :
+                    "Unknown error occurred."
+                : "Something went wrong."
         });
     }
 }
@@ -54,28 +76,38 @@ const getUserData = async (req: Request, res: Response): Promise<void> => {
     const { hash } = req.query;
 
     try {
-        const userInDb = await User.findOne({ sharing_token: hash });
+        const userInDb = await User.findOne({ sharing_token: hash }) as IUser | null;
 
         if (!userInDb || !userInDb.sharing) {
-            res.status(400).json({
+            res.status(StatusCode.Unauthorized).json({
                 success: false,
                 message: "User hasn't shared their links."
             });
             return;
         }
 
-        const userId = userInDb._id;
+        const userId = userInDb._id.toString();
         const links = await Content.find({ userId });
 
-        res.status(200).json({
+        res.status(StatusCode.Success).json({
             success: true,
             message: "Successfully fetched the user links.",
             data: links
         });
-    } catch (error) {
-        res.status(500).json({
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.log(error.message);
+        } else {
+            console.log("Unknown error: ", error);
+        }
+
+        res.status(StatusCode.Error).json({
             success: false,
-            message: "Internal server error."
+            message: process.env.NODE_ENV === "development" ?
+                error instanceof Error ?
+                    error.message :
+                    "Unknown error occurred."
+                : "Something went wrong."
         });
     }
 }
