@@ -1,25 +1,17 @@
 import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 import User from "../models/User";
 import Content from "../models/Content";
-import { IUser } from "../models/User";
-import { AuthenticatedRequest } from "../middleware/authenticateUser";
 import { StatusCode } from "../constants/statusCodes";
 import crypto from "crypto";
+import { AuthenticatedRequest } from "../middleware/authenticateUser";
 
-//generate unique hash for every user
+// Generate a unique hash for every user
 const generateUniqueHash = async (): Promise<string> => {
-    let newHash: string = "";
-    let isUnique = false;
+    const newHash = crypto.randomBytes(16).toString("hex");
+    const existingUser = await User.findOne({ sharing_token: newHash });
 
-    while (!isUnique) {
-        newHash = crypto.randomBytes(16).toString("hex"); 
-        const existingUser = await User.findOne({ sharing_token: newHash });
-        if (!existingUser) {
-            isUnique = true;
-        }
-    }
-
-    return newHash;
+    return existingUser ? generateUniqueHash() : newHash;
 };
 
 const toggleSharing = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -31,7 +23,7 @@ const toggleSharing = async (req: AuthenticatedRequest, res: Response): Promise<
         if (!userInDb) {
             res.status(StatusCode.NotFound).json({
                 success: false,
-                message: "user not found"
+                message: "User not found"
             });
             return;
         }
@@ -51,9 +43,8 @@ const toggleSharing = async (req: AuthenticatedRequest, res: Response): Promise<
             message: userInDb.sharing
                 ? "Sharing enabled successfully."
                 : "Sharing disabled successfully.",
-            token: userInDb.sharing ? userInDb.sharing_token : undefined
+            token: userInDb.sharing ? userInDb.sharing_token : null
         });
-
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.log(error.message);
@@ -76,20 +67,20 @@ const getUserData = async (req: Request, res: Response): Promise<void> => {
     const { hash } = req.query;
 
     try {
-        const userInDb = await User.findOne({ sharing_token: hash }) as IUser | null;
+        const userInDb = await User.findOne({ sharing_token: hash });
 
         if (!userInDb || !userInDb.sharing) {
-            res.status(StatusCode.Unauthorized).json({
+            res.status(400).json({
                 success: false,
                 message: "User hasn't shared their links."
             });
             return;
         }
 
-        const userId = userInDb._id.toString();
+        const userId = userInDb._id;
         const links = await Content.find({ userId });
 
-        res.status(StatusCode.Success).json({
+        res.status(200).json({
             success: true,
             message: "Successfully fetched the user links.",
             data: links
