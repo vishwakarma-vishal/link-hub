@@ -33,7 +33,7 @@ const Content: React.FC<ContentProps> = ({ links, isModalOpen, setIsModalOpen, s
     const shareLink = `https://yourapp.com/share/${hash}`;
 
     // share link handler
-    const shareHandler = async (e: React.FormEvent<HTMLFormElement>) => {
+    const shareHandler = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
 
         try {

@@ -1,17 +1,23 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useSetRecoilState } from "recoil";
+import user from '../recoil/userAtom'
+import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
+    const setUser = useSetRecoilState(user);
+    const navigate = useNavigate();
+
     const [formData, setFormData] = useState({
         email: "",
         password: ""
     });
 
-    const changeHandler = (e) => {
+    const changeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     }
 
-    const submitHandler = async (e) => {
+    const submitHandler = async (e: React.FormEvent) => {
         e.preventDefault();
 
         try {
@@ -22,6 +28,8 @@ const Login: React.FC = () => {
             });
 
             localStorage.setItem("token", response.data.token);
+            setUser({ isAuthenticated: true });
+            navigate("/dashboard");
 
             console.log(response.data);
         } catch (error) {

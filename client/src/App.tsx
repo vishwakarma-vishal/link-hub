@@ -8,6 +8,7 @@ import Sharing from "./pages/Sharing";
 import Layout from "./components/common/Layout";
 
 const App: React.FC = function () {
+
   return (
     <Routes>
       {/* Apply Layout as a parent route */}

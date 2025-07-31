@@ -9,7 +9,7 @@ type ButtonProps = {
     type: keyof typeof varient;
     icon: ReactElement;
     text: string;
-    handler?: Function
+    handler?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 const Button: React.FC<ButtonProps> = ({ handler, type, icon, text }) => {

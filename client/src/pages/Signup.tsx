@@ -8,11 +8,11 @@ const Signup: React.FC = () => {
         password: ""
     });
 
-    const changeHandler = (e) => {
+    const changeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     }
 
-    const submitHandler = async (e) => {
+    const submitHandler = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         try {
