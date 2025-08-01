@@ -14,8 +14,6 @@ const Dashboard: React.FC = () => {
     // get all content
     const [links, setLinks] = useState<LinkType[]>([]);
     const [filteredLinks, setFilteredLinks] = useState<LinkType[]>([]);
-
-
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedLinkType, setSelectedLinkType] = useState("all");
 

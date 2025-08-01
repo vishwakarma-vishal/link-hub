@@ -55,7 +55,7 @@ const Content: React.FC<ContentProps> = ({ links, isModalOpen, setIsModalOpen, s
     }
 
     return (
-        <main className="relative p-8 w-full h-screen">
+        <main className="relative p-8 w-full h-screen overflow-x-scroll">
             <div className="flex justify-between">
                 <h2 className="text-2xl font-semibold">{capitalizeFirstLetter(selectedLinkType)}</h2>
                 <div className="flex gap-4">
